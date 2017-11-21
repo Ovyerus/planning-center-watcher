@@ -10,7 +10,7 @@ app.get('/', (req, res) => {
     res.send('Hello');
 });
 
-app.get(WEBHOOK_ROUTE, (req, res) => {
+app.post(WEBHOOK_ROUTE, (req, res) => {
     console.log(req.body);
     res.sendStatus(200);
 });
