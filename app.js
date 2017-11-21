@@ -11,6 +11,7 @@ app.get('/', (req, res) => {
 });
 
 app.post(WEBHOOK_ROUTE, (req, res) => {
+    console.log(req)
     console.log(req.body);
     res.sendStatus(200);
 });
