@@ -1,21 +1,22 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-
 const app = express();
-const WEBHOOK_ROUTE = '/api/webhook';
+const expressWS = require('express-ws')(app);
 
-app.use(bodyParser.json());
+global.wss = expressWS.getWss();
+
+app.use(bodyParser.text());
+app.use('/api', require('./api'));
+app.use((err, req, res, next) => {
+    console.log(err);
+    res.status(500);
+    res.json({error: err.message});
+});
 
 app.get('/', (req, res) => {
     res.send('Hello');
 });
 
-app.post(WEBHOOK_ROUTE, (req, res) => {
-    console.log(req)
-    console.log(req.body);
-    res.sendStatus(200);
-});
-
 app.listen(process.env.PORT || 8080, () => {
-    console.log('hoi');
+    console.log(`Planning Center Viewer available at port ${process.env.PORT || 8080}.`);
 });
