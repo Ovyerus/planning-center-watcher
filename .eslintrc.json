@@ -12,10 +12,6 @@
         }
     },
 
-    "globals": {
-        "wss": false
-    },
-
     "rules": {
         "no-console": 0,
         "global-require":"off",
