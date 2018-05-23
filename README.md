@@ -12,7 +12,15 @@ $ npm install # or `yarn`
 $ npm run build # or `yarn build`
 ```
 
-3. Run server
+3. Create a `config.json` in this folder with an application ID and secret from [the API page](https://api.planningcenteronline.com/oauth/applications) (you'll probably just want a personal access token).
+```json
+{
+    "applicationID": "",
+    "applicationSecret": ""
+}
+```
+
+4. Run server
 ```sh
 $ npm run start # or `yarn start`
 ```
