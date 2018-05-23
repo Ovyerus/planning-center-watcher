@@ -1,29 +1,23 @@
 const express = require('express');
+const expressWS = require('express-ws');
 const https = require('https');
 const url = require('url');
 const config = require('./config.json');
 
-const PORT = process.env.PORT || config.port || 8080;
-const URL = 'https://api.planningcenteronline.com/check_ins/v2/check_ins?include=location&order=created_at';
-const app = express();
-const expressWS = require('express-ws')(app);
-const wss = expressWS.getWss();
-const knownCheckIns = {};
-
 if (!config.applicationID) throw new Error('Configuration is missing `applicationID`.');
 if (!config.applicationSecret) throw new Error('Configuration is missing `applicationSecret`.');
 
-setInterval(() => {
-    wss.clients.forEach(ws => {
-        if (ws.isAlive === false) return ws.terminate();
+const PORT = process.env.PORT || config.port || 8080;
+const URL = 'https://api.planningcenteronline.com/check_ins/v2/check_ins?order=created_at&include=location,person&per_page=50';
 
-        ws.isAlive = false;
-        ws.ping('', false, true);
-    });
-}, 15000);
+const app = express();
+const appWS = expressWS(app);
+const wss = appWS.getWss();
+const checkIns = [];
 
-setInterval(() => {
+function pollPlanningCenter() {
     console.log('Polling Planning Center...');
+
     https.get(Object.assign(url.parse(URL), {
         auth: `${config.applicationID}:${config.applicationSecret}`
     })).on('response', res => {
@@ -37,10 +31,14 @@ setInterval(() => {
             handleData(JSON.parse(chunked));
         });
     }).on('error', console.error).end();
-}, 10000);
+}
 
 function heartbeat() {
     this.isAlive = true;
+}
+
+function broadcast(data) {
+    wss.clients.forEach(ws => ws.send(data));
 }
 
 function isToday(timestamp) {
@@ -48,57 +46,58 @@ function isToday(timestamp) {
 }
 
 function handleData(data) {
-    let {data: checkIns, included} = data;
-    let removed = [];
-    let new_ = {};
-    console.log('handling data')
+    let {data: dataCheckIns, included} = data;
+    let removedCheckIns = [];
+    let newCheckIns = [];
 
-    for (let {id, type, attributes} of checkIns) {
-        if (type !== 'CheckIn' || (attributes.checked_out_at && !knownCheckIns[id]) || !isToday(attributes.created_at)) {
-            console.log(isToday(attributes.created_at))
-            continue;
-        }
+    for (let {id, attributes, relationships} of dataCheckIns) {
+        if ((attributes.checked_out_at && !checkIns.find(x => x.id === id)) ||
+            !isToday(attributes.created_at)) continue;
+
         if (attributes.checked_out_at) {
-            console.log('deded')
-            removed.push(id);
-            delete knownCheckIns[id];
+            removedCheckIns.push(id);
+            checkIns.splice(checkIns.findIndex(p => p.id === id));
+
             continue;
         }
 
-        console.log('cleansing')
-        new_[id] = cleanAttributes(included, attributes);
+        let cleaned = cleanAttributes(id, attributes, relationships, included);
+        
+        newCheckIns.push(cleaned);
+        checkIns.push(cleaned);
     }
 
-    if (removed[0]) {
-        console.log('delet this')
-        wss.clients.forEach(ws => ws.send(JSON.stringify({
+    if (removedCheckIns.length) {
+        broadcast(JSON.stringify({
             type: 'checkout',
-            people: removed
-        })));
+            people: removedCheckIns
+        }));
     }
 
-    if (Object.keys(new_)[0]) {
-        console.log('new newn ewnewnew')
-        wss.clients.forEach(ws => ws.send(JSON.stringify({
+    if (newCheckIns.length) {
+        broadcast(JSON.stringify({
             type: 'checkin',
-            people: new_
-        })));
+            people: newCheckIns
+        }));
     }
 }
 
-function cleanAttributes(inc, attr) {
+function cleanAttributes(id, attr, rel, inc) {
     return {
-        firstName: attr.first_name,
-        lastName: attr.last_name,
-        fullName: `${attr.first_name} ${attr.last_name}`,
+        id,
+        personID: rel.person.data ? rel.person.data.id : id,
+        name: `${attr.first_name} ${attr.last_name}`,
         checkedInAt: attr.created_at,
-        location: attr.relationships.location.data
-            ? inc.find(v => v.type === 'Location' && v.id === attr.relations.location.data.id).attributes.name
+        avatar: rel.person.data
+            ? inc.find(v => v.type === 'Person' && v.id === rel.person.data.id).attributes.avatar_url
+            : null,
+        location: rel.location.data
+            ? inc.find(v => v.type === 'Location' && v.id === rel.location.data.id).attributes.name
             : null
     };
 }
 
-app.use(express.static('public'));
+app.use(express.static('dist'));
 app.use((err, req, res, next) => { // eslint-disable-line
     console.log(err);
     res.status(500);
@@ -106,21 +105,33 @@ app.use((err, req, res, next) => { // eslint-disable-line
 });
 
 app.get('/', (req, res) => {
-    res.sendFile('/index.html');
+    res.sendFile('./index.html');
 });
 
 app.ws('/ws', (ws, req) => {
     console.log(`New websocket connection from "${req.connection.remoteAddress}"`);
     ws.isAlive = true;
 
-    ws.on('pong', heartbeat);
-    //ws.on('message', msg => ws.send(msg));\
     ws.send(JSON.stringify({
         type: 'checkin',
-        people: knownCheckIns
+        people: checkIns
     }));
+
+    ws.on('pong', heartbeat);
 });
 
 app.listen(PORT, () => {
     console.log(`Planning Center Viewer available at port ${PORT}.`);
+    pollPlanningCenter();
 });
+
+setInterval(() => {
+    wss.clients.forEach(ws => {
+        if (ws.isAlive === false) return ws.terminate();
+
+        ws.isAlive = false;
+        ws.ping('', false, true);
+    });
+}, 15000);
+
+setInterval(pollPlanningCenter, 10000);

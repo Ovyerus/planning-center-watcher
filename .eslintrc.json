@@ -1,14 +1,17 @@
 {
     "env": {
         "es6": true,
+        "browser": true,
         "node": true
     },
+    "plugins": ["jsx"],
 
     "extends": "eslint:recommended",
     "parserOptions": {
+        "ecmaVersion": 2018,
         "sourceType": "module",
         "ecmaFeatures": {
-            "jsx": false
+            "jsx": true
         }
     },
 
@@ -67,13 +70,17 @@
                     "boolean": "Boolean",
                     "promise": "Promise",
                     "array": "Array",
-                    "undefined":" Undefined",
                     "null": "Null",
                     "function": "Function"
                 },
 
                 "requireReturn": false
             }
-        ]
+        ],
+
+        "jsx/uses-factory": ["error", {"pragma": "h"}],
+        "jsx/factory-in-scope": ["error", {"pragma": "h"}],
+        "jsx/mark-used-vars": "error",
+        "jsx/no-undef": "off"
     }
 }

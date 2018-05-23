@@ -4,6 +4,7 @@
   "description": "A simple Express server that receives webhook updates, and displays them in real-time via a front-end websocket.",
   "main": "app.js",
   "scripts": {
+    "build": "parcel build public/index.html -d dist/ --public-url ./",
     "start": "node app.js"
   },
   "repository": {
@@ -15,9 +16,20 @@
   "bugs": {
     "url": "https://github.com/Ovyerus/planning-center-watcher/issues"
   },
-  "homepage": "https://github.com/Ovyerus/planning-center-watcher#readme",
+  "homepage": "https://github.com/Ovyerus/planning-center-watcher",
   "dependencies": {
     "express": "^4.16.2",
-    "express-ws": "^3.0.0"
+    "express-ws": "^3.0.0",
+    "hyperapp": "^1.1.2",
+    "identicon.js": "^2.3.2",
+    "md5-jkmyers": "^0.0.1"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-preset-env": "^1.7.0",
+    "eslint": "^4.19.0",
+    "eslint-plugin-jsx": "^0.0.2",
+    "parcel-bundler": "^1.8.1"
   }
 }
