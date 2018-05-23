@@ -16,3 +16,7 @@ $ npm run build # or `yarn build`
 ```sh
 $ npm run start # or `yarn start`
 ```
+
+## License
+Everything in this repository (excluding dependencies and the icons) is licensed under the MIT License.  
+I have no relation to Planning Center in any way, shape, or form, and do not own any logos or stuff associated with them.
