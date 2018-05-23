@@ -27,7 +27,13 @@ const view = state => (
                 </div>
             ) : (
                 <div class="clearfix gutter my-6">
-                    {state.people.map(p => <Person {...p}/>)}
+                    {state.people.length ? state.people.map(p => <Person {...p}/>) : (
+                        <div class="col-12">
+                            <div class="flash">
+                                <h2 class="subtitle">No check ins to display.</h2>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )
         }
@@ -37,7 +43,7 @@ const view = state => (
 const globApp = window.globApp = app(state, actions, view, document.body);
 
 ws.addEventListener('open', () => {
-    ws.send('hello');
+    console.log('Connected to websocket');
     globApp.loaded();
 });
 
