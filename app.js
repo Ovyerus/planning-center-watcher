@@ -112,11 +112,6 @@ app.ws('/ws', (ws, req) => {
     console.log(`New websocket connection from "${req.connection.remoteAddress}"`);
     ws.isAlive = true;
 
-    ws.send(JSON.stringify({
-        type: 'checkin',
-        people: checkIns
-    }));
-
     ws.on('pong', heartbeat);
 });
 
