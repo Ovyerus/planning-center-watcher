@@ -17,7 +17,7 @@ export const Person = ({location, name, id, personID, avatar}) => (
                     <h2 class="truncate">{name}</h2>
                 </div>
                 <div class="location tooltipped tooltipped-se tooltipped-align-left-1" aria-label={location}>
-                    <img src="img/location.svg" alt="location" class="inline-block"/>
+                    <img src={document.getElementById('location-img').href} alt="location" class="inline-block"/>
                     <span class="ml-1 truncate">{location}</span>
                 </div>
             </div>
